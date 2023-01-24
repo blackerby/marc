@@ -33,8 +33,8 @@ impl Leader {
         if s.len() < 24 {
             return Err("incomplete leader");
         } else {
-            let record_length = s[..=RECORD_LENGTH_END].parse().unwrap();
-            let offset = s[BASE_START..=BASE_END].parse().unwrap();
+            let record_length = s[..=RECORD_LENGTH_END].parse().unwrap(); // smelly
+            let offset = s[BASE_START..=BASE_END].parse().unwrap(); // smelly
             let chars: Vec<char> = s.chars().collect();
             Ok(Leader {
                 raw: s.to_string(),
