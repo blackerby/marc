@@ -1,13 +1,10 @@
+use crate::errors::Error;
 use std::fmt;
 
 const BASE_START: usize = 12;
 const BASE_END: usize = 16;
-const FIELD_TERMINATOR: usize = 0x1E;
-const SUBFIELD_TERMINATOR: usize = 0x1F;
-const RECORD_TERMINATOR: usize = 0x1D;
 const RECORD_LENGTH_END: usize = 4;
 
-#[derive(Debug)]
 struct Leader {
     raw: String,
     record_length: usize,
@@ -29,9 +26,9 @@ struct Leader {
 }
 
 impl Leader {
-    fn new(s: &String) -> Result<Leader, &'static str> {
+    fn new(s: &String) -> Result<Leader, Error> {
         if s.len() < 24 {
-            return Err("incomplete leader");
+            return Err(Error::LeaderTooShort(s.len()));
         } else {
             let record_length = s[..=RECORD_LENGTH_END].parse().unwrap(); // smelly
             let offset = s[BASE_START..=BASE_END].parse().unwrap(); // smelly
@@ -68,13 +65,19 @@ impl fmt::Display for Leader {
     }
 }
 
+impl Leader {
+    fn raw(self) -> String {
+        self.raw
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
     fn good_leader() {
-        let input = String::from("01848nam  2200385 i 4500");
+        let input = String::from("01848nam a2200385 i 4500");
         let leader = Leader::new(&input).unwrap();
 
         assert_eq!(input, leader.raw);
@@ -83,7 +86,7 @@ mod tests {
         assert_eq!('a', leader.record_type);
         assert_eq!('m', leader.bib_level);
         assert_eq!(' ', leader.control);
-        assert_eq!(' ', leader.encoding_scheme);
+        assert_eq!('a', leader.encoding_scheme);
         assert_eq!('2', leader.indicator_count);
         assert_eq!('2', leader.subfield_length);
         assert_eq!(385, leader.offset);
@@ -98,8 +101,15 @@ mod tests {
 
     #[test]
     fn display() {
-        let input = String::from("01848nam  2200385 i 4500");
+        let input = String::from("01848nam a2200385 i 4500");
         let leader = Leader::new(&input).unwrap();
         assert_eq!(format!("=LDR {}", input), leader.to_string());
+    }
+
+    #[test]
+    fn raw() {
+        let input = String::from("01848nam a2200385 i 4500");
+        let leader = Leader::new(&input).unwrap();
+        assert_eq!(leader.raw(), input);
     }
 }
